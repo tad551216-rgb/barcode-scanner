@@ -162,6 +162,7 @@ try {
   }
 
   let scanning = false;
+  let userPickedCamera = false; // 選択欄をユーザー自身が操作した時だけtrueにする
   let lastCode = null, lastTime = 0;
 
   if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
@@ -179,7 +180,9 @@ try {
     }
     setStatus('カメラを起動中…');
     try {
-      const deviceId = cameraSelect.value || undefined;
+      // ユーザーが選択欄を自分で操作した場合だけ、その指定を使う。
+      // それ以外(初回・続けてスキャン)は毎回、確実に背面を取りにいくロジックへ任せる。
+      const deviceId = userPickedCamera ? (cameraSelect.value || undefined) : undefined;
       await window.FGBarcodeScanner.start(video, onDecode, onScanError, selectedFormats(), deviceId);
       scanning = true;
       placeholder.style.display = 'none';
@@ -214,8 +217,9 @@ try {
     }
   });
 
-  // カメラを切り替えたら、選んだデバイスで再起動する
+  // カメラを切り替えたら、選んだデバイスで再起動する（ユーザーの明示操作としてフラグを立てる）
   cameraSelect.addEventListener('change', async () => {
+    userPickedCamera = true;
     if (!scanning) return;
     torchOn = false; btnTorch.classList.remove('on');
     setStatus('カメラを切り替え中…');
